@@ -95,6 +95,30 @@ T = {
     ),
 }[LANG]
 
+T.update({
+    "pt": dict(
+        t24="Onde a área construída mais cresceu entre 2010 e 2022?",
+        s24="Variação da área construída por hexágono (IPTU 2010 e 2022), nas subprefeituras da Lapa e da "
+            "Capela do Socorro.\nMesma escala e mesmas classes nos dois mapas. Mapa 2.4 do trabalho prático de SIG.",
+        leg24="Variação da área construída, 2010 a 2022",
+        c24=["queda de mais de 10%", "queda de até 10%", "estável ou alta de até 20%", "alta de 20% a 50%", "alta de mais de 50%"],
+        nd24="Sem registro de IPTU em 2010 ou em 2022",
+        f24="Dados: IPTU 2010 e 2022, Painel Cadastral da Cidade de São Paulo (PMSP); subprefeituras (GeoSampa). "
+            "Grade hexagonal de 12 ha por célula.\nClasses em intervalos manuais, iguais nas duas áreas.",
+    ),
+    "en": dict(
+        t24="Where did built area grow most between 2010 and 2022?",
+        s24="Change in built area per hexagon (2010 and 2022 property-tax records), in the Lapa and "
+            "Capela do Socorro boroughs.\nSame scale and same classes on both maps. Map 2.4 of the GIS course project.",
+        leg24="Change in built area, 2010 to 2022",
+        c24=["down more than 10%", "down up to 10%", "flat or up to 20% growth", "20% to 50% growth", "more than 50% growth"],
+        nd24="No property-tax record in 2010 or in 2022",
+        f24="Data: 2010 and 2022 IPTU property-tax records, São Paulo cadastral panel (PMSP); boroughs (GeoSampa). "
+            "Hexagonal grid, 12 ha per cell.\nManual class intervals, identical in both areas.",
+    ),
+}[LANG])
+DIVERG = ["#A2541A", "#E3B77A", "#E6E9E3", "#7BAEB1", "#0E5259"]  # queda (âmbar) | neutro | alta (petróleo)
+
 
 def num(v, casas=0):
     s = f"{v:,.{casas}f}"
@@ -286,6 +310,49 @@ def mapa_25():
     plt.close(fig)
 
 
+# ---------- Mapa 2.4 ----------
+def mapa_24():
+    campo = "taxa_crescimento_pct"
+    q = [-10, 0, 20, 50]                             # intervalos manuais do mapa entregue
+    lapa, cs = ler("hexagonos_crescimento_lapa.gpkg"), ler("hexagonos_crescimento_capela_do_socorro.gpkg")
+    sl, sc = ler("subprefeitura_lapa.gpkg"), ler("subprefeitura_capela_do_socorro.gpkg")
+    fig = plt.figure(figsize=(15, 11.6), facecolor=SURFACE)
+    cabecalho(fig, T["t24"], T["s24"], y=0.95)
+    a1 = fig.add_axes([0.02, 0.40, 0.50, 0.42]); a2 = fig.add_axes([0.60, 0.075, 0.385, 0.80])
+    bl, bc = sl.total_bounds, sc.total_bounds
+    esc = (0.80 * 11.6) / ((bc[3] - bc[1]) * 1.05)
+    enquadrar(a1, fig, (bl[0] + bl[2]) / 2, (bl[1] + bl[3]) / 2, esc)
+    enquadrar(a2, fig, (bc[0] + bc[2]) / 2, (bc[1] + bc[3]) / 2, esc)
+    for ax, hexs, sub, nome in [(a1, lapa, sl, T["lapa"]), (a2, cs, sc, T["cs"])]:
+        vazio = hexs[hexs[campo].isna()]
+        if len(vazio):
+            vazio.plot(ax=ax, facecolor=SURFACE, edgecolor="#E3E7E2", linewidth=0.3, hatch="////")
+        dados = hexs[hexs[campo].notna()].copy()
+        # variação igual a zero fica na classe neutra, não na de queda
+        dados["_c"] = dados[campo].apply(lambda v: 0 if v < q[0] else 1 if v < q[1] else 2 if v <= q[2] else 3 if v <= q[3] else 4)
+        for i, c in enumerate(DIVERG):
+            sel = dados[dados._c == i]
+            if len(sel):
+                sel.plot(ax=ax, color=c, edgecolor=SURFACE, linewidth=0.5, zorder=2)
+        sub.boundary.plot(ax=ax, color=INK, linewidth=1.0, zorder=4)
+        b = sub.total_bounds
+        ax.text(b[0], b[3] + 350, nome, fontsize=12, fontweight="bold", color=INK, va="bottom")
+    barra_escala(a1, bl[0], bl[1] - 1150, 4)
+    norte(a1, bl[2] + 600, bl[3] - 300, 900)
+    lx, ly = 0.035, 0.305
+    fig.text(lx, ly, T["leg24"], fontsize=12.5, fontweight="bold", color=INK, va="bottom")
+    lg = fig.add_axes([lx, ly - 0.20, 0.30, 0.19]); lg.axis("off"); lg.set_xlim(0, 15); lg.set_ylim(0, 6)
+    for i, (c, rot) in enumerate(zip(DIVERG, T["c24"])):
+        yy = 5 - i
+        lg.add_patch(Rectangle((0, yy + 0.12), 1.0, 0.76, fc=c, ec=RULE, lw=0.5))
+        lg.text(1.4, yy + 0.5, rot, va="center", fontsize=10, color=INK2)
+    lg.add_patch(Rectangle((0, 0.12), 1.0, 0.76, fc=SURFACE, ec="#D5DBD4", lw=0.5, hatch="////"))
+    lg.text(1.4, 0.5, T["nd24"], va="center", fontsize=10, color=INK2)
+    rodape(fig, T["f24"])
+    fig.savefig(SAIDA / f"mapa-2-4-crescimento-da-area-construida-{LANG}.png", dpi=150, facecolor=SURFACE)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
-    mapa_15(); mapa_12(); mapa_25()
+    mapa_15(); mapa_12(); mapa_24(); mapa_25()
     print("ok:", sorted(p.name for p in SAIDA.glob(f"*-{LANG}.png")))

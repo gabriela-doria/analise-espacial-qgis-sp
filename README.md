@@ -1,14 +1,15 @@
 # Análise espacial no QGIS: metrô, renda e área construída em São Paulo
 
-Mapas que produzi no trabalho prático de SIG da disciplina **PTR3312 Geoprocessamento para Engenharia Ambiental** (Poli-USP, 1º semestre de 2026). O trabalho foi feito em grupo de 3 pessoas. Este repositório reúne só os mapas de minha autoria, conforme a ficha do grupo.
+Mapas que produzi no trabalho prático de SIG da disciplina **PTR3312 Geoprocessamento para Engenharia Ambiental** (Poli-USP, 1º semestre de 2026). O trabalho foi feito em grupo de 3 pessoas. Este repositório reúne só os mapas que eu fiz.
 
 **Ferramentas:** QGIS 3.44 (análise e mapas entregues), Python com geopandas (redesenho das figuras), Google Earth Engine (laboratórios de sensoriamento remoto).
 
-## As três perguntas
+## As quatro perguntas
 
 | Mapa | Pergunta | Escala |
 |---|---|---|
 | 1.5 | A renda do distrito acompanha o acesso ao metrô? | Município, 96 distritos |
+| 2.4 | Onde a área construída mais cresceu entre 2010 e 2022? | Lapa e Capela do Socorro, grade hexagonal |
 | 2.5 | Onde a cidade é mais construída tem metrô? | Lapa e Capela do Socorro, grade hexagonal |
 | 1.2 | Onde São Paulo é mais adensada? | Município, 96 distritos |
 
@@ -40,6 +41,29 @@ O indicador é o *People Near Transit*: a parcela dos moradores de cada distrito
 - A população de cada fragmento supõe distribuição uniforme dentro do setor censitário.
 - A camada tem só estações de metrô. Trem e corredor de ônibus ficaram fora.
 - A distância é em linha reta, não pelo caminho a pé.
+
+## Mapa 2.4: crescimento da área construída
+
+![Mapa 2.4](mapas/mapa-2-4-crescimento-da-area-construida-pt.png)
+
+**O que eu fiz no QGIS**
+
+1. Recortei (clip) os lotes do IPTU de 2010 e de 2022 pelo limite de cada subprefeitura, corrigi as geometrias e reprojetei.
+2. Somei a área construída dos lotes em cada hexágono, uma vez para cada ano (join por localização com soma).
+3. Juntei os dois anos na mesma grade e calculei a variação na calculadora de campo: (2022 − 2010) / 2010 × 100.
+4. Classifiquei em 5 intervalos manuais, com o zero separando queda de alta, iguais nas duas subprefeituras.
+
+**O que o mapa mostra**
+
+- A área construída somada cresceu 25,5% na Lapa (de 46,4 para 58,2 milhões de m²) e 17,0% na Capela do Socorro (de 14,9 para 17,5 milhões).
+- Nas duas subprefeituras, a maior parte dos hexágonos com dado ficou entre estável e alta de até 20%: 190 de 375 na Lapa e 292 de 481 na Capela do Socorro.
+- Na Lapa, 62 hexágonos cresceram mais de 50%. Eles se concentram no leste da subprefeitura.
+- Na Capela do Socorro, 70 hexágonos cresceram mais de 50%.
+
+**Limites**
+
+- Onde a base de 2010 é quase zero, a taxa fica muito alta. Por isso a última classe é aberta.
+- Uma queda pode ser demolição ou mudança no cadastro. O dado não distingue as duas.
 
 ## Mapa 2.5: área construída e metrô
 
@@ -94,6 +118,8 @@ python scripts/desenhar_mapas.py camadas mapas pt
 ```
 
 **Sobre o uso de IA.** Usei o Claude como guia para montar a sequência de operações no QGIS e para escrever o script de redesenho. As operações, as decisões de método e a conferência dos resultados são minhas.
+
+**Sobre a autoria.** Os mapas 1.5 e 2.5 e uma versão dos mapas 1.1, 1.2 e 1.3 têm meu nome na ficha do grupo. O mapa 2.4 também é meu; a ficha não registra autor para ele.
 
 **O que ficou de fora.** Os dados brutos (lotes do IPTU, setores censitários, tabelas da OD) são grandes e públicos: os links estão abaixo. Os mapas dos outros integrantes do grupo também não estão aqui.
 
